@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MailMon</title>
+  </head>
+  <body>
+    <div id="app">
+      <h1>Mailer</h1>
+      <form>
+        Name:     <input type="text" name="tenanturl" />
+        Password: <input type="text" name="password" />
+
+        <input onChange = { e => this.upload(e) } type = "file" id = "files" ref = { file => this.fileUpload } />
+        <input type="submit" value="Submit" />
+        </form>
+    </div>
+    <style>
+      #app {
+        font-family: "Avenir", Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-align: center;
+        color: #2c3e50;
+        margin-top: 60px;
+      }
+    </style>
+  </body>
+</html>

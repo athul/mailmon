@@ -2,9 +2,23 @@ import json
 from typing import Optional, List, Dict
 from fastapi import FastAPI, Form
 from pydantic import BaseModel
+import markdown2 as md
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+origins = [
+    "http://localhost",
+    "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 async def getEmails(user_type:str,rn:List[int]=None)->List:
     if user_type == "cs":
         with open('data/emails-cs.json') as f:
@@ -39,7 +53,9 @@ async def getEmails(user_type:str,rn:List[int]=None)->List:
 async def getEmail(user_type:str,) -> List:
     return await getEmails(user_type)    
 
-
+@app.post("/md")
+async def renderMD(mdb:str=Form(...)):
+    return md.markdown(text=mdb)
 
 @app.post("/send")
 async def sendEmail(
