@@ -19,7 +19,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-async def getEmails(user_type:str,rn:List[int]=None)->List:
+def getEmails(user_type:str,rn:List[int]=None)->List:
     if user_type == "cs":
         with open('data/emails-cs.json') as f:
             data = json.load(f)
@@ -32,7 +32,7 @@ async def getEmails(user_type:str,rn:List[int]=None)->List:
         with open('data/emails-rep.json') as f:
             data = json.load(f)
         emails = [data[i]['Email'] for i,_ in enumerate(data)]
-    elif rn :
+    elif rn:
         rolls = []
         emails = []
         for item in rn:
@@ -51,7 +51,7 @@ async def getEmails(user_type:str,rn:List[int]=None)->List:
 
 @app.get("/email/{user_type}")
 async def getEmail(user_type:str,) -> List:
-    return await getEmails(user_type)    
+    return  getEmails(user_type)    
 
 @app.post("/md")
 async def renderMD(mdb:str=Form(...)):
@@ -60,14 +60,16 @@ async def renderMD(mdb:str=Form(...)):
 @app.post("/send")
 async def sendEmail(
     email_to:Optional[str] = Form(None),
-    roll_no:Optional[List] = Form(None),
+    roll_no:Optional[str] = Form(None),
     content:str = Form(...)
     ):
-    print(type(roll_no),len(roll_no))
-    if roll_no[0] is "":
-        emails = await getEmails(email_to)
-        return emails
+    mdrender=md.markdown(text=content)
+    print(roll_no)
+    if roll_no is None:
+        emails =  getEmails(email_to)
+        return {"email":emails,"md":str(mdrender)}
     else:
-        roll_nos = [int(x) for x in roll_no[0].split(",")]
-        emails = await getEmails(None,rn=roll_nos)
-        return emails
+        roll_nos = [int(x) for x in roll_no.split(",")]
+        emails =  getEmails(None,rn=roll_nos)
+        return {"email":emails,"md":str(mdrender)}
+        # return {"email":"ee@aa","md":"<h2>Error</h2>"} 

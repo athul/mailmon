@@ -1,22 +1,45 @@
 <template>
 <div>
   <h1>MailMon</h1>
-  <label>Email Content</label><br/>
-  <textarea v-model="message" placeholder="Add Email Content in Markdwon" ></textarea><br/>
-  <button v-on:click="rendermd">Preview MD</button><br/>
-
+<FormulateForm @submit="sndems">
+  <FormulateInput
+  type="text"
+  v-model="sub"
+  name="Subject"
+  label="Subject of the Email"
+  />
+  <FormulateInput
+  type="textarea"
+  v-model="md"
+  label="Email Content"
+  validation="required|max:200,length"
+  validation-name="Email Content"
+  error-behavior="live"
+  placeholder="Enter content in Markdown Format. Max 200 Characters"
+/>
+<p v-html="sub"></p>
+  <FormulateInput
+  v-model="selected"
+  :options="{all: 'All Students', cs: 'Students in CS Dept.', it: 'Students in IT', reps: 'Email Class Reps', roll:'Email to specific Roll Numbers'}"
+  type="select"
+  placeholder="Select an option"
+  label="Select whom to send Emails to"
+/>
+<div v-if="selected === 'roll'">
+  <FormulateInput
+  v-model="rn"
+    type="text"
+  />
+</div>
+<FormulateInput
+    type="submit"
+    name="Preview MD"
+  />
+</FormulateForm>
 <div v-html="markdown"></div>
-  <p>{{email}}</p>
-  <label> Send Emails to </label>
-  <select v-model="selected">
-  <option v-for="option in options" v-bind:key="option.value" >
-    {{ option.text }}
-  </option>
-</select>
 <br/>
-<button v-on:click="fetchemails">Click</button>
 <div v-for="email in emails" :key="email">
-<p>{{email}}</p>
+<div>{{email}}</div>
 </div>
 </div>
 </template>
@@ -27,29 +50,19 @@ export default {
   data() {
     return {
       email:'',
-      message:'',
+      md:'',
       selected:'it',
-      options: [
-      { text: 'all', value: 'all' },
-      { text: 'cs', value: 'cs' },
-      { text: 'it', value: 'it' }
-    ],
-    emails:'',
-    markdown:''
+      emails:'',
+      markdown:'',
+      rn:'',
+      sub:''
     }
   },
   methods:{
-    fetchemails:function(){
-      console.log(this.selected)
-        this.$http
-    .get(`http://localhost:8000/email/${this.selected}`)
-    .then(response=>(this.emails = response.data))
-    .catch(error => console.log(error))
-  },
     rendermd:function(){
-      console.log(this.message)
+      console.log(this.md)
       var mdForm = new FormData()
-      mdForm.append('mdb',this.message)
+      mdForm.append('mdb',this.md)
       this.$http
       .post("http://localhost:8000/md",mdForm,{
     headers: {
@@ -57,14 +70,22 @@ export default {
     }})
     .then(response=>(this.markdown = response.data))
     .catch(error => console.log(error))
+    },
+    sndems:function(){
+      var mainForm= new FormData()
+      mainForm.append("email_to",this.selected)
+      mainForm.append("roll_no",this.rn)
+      mainForm.append("content",this.md)
+      this.$http
+      .post("http://localhost:8000/send",mainForm,{
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }})
+    .then(response=>(this.markdown = response.data.md,this.emails=response.data.email,console.log(this.emails)))
+    .catch(error => console.log(error))
+    
     }
   },
-  mounted(){
-    this.$http
-    .get(`http://localhost:8000/email/${this.selected}`)
-    .then(response=>(this.emails = response.data))
-    .catch(error => console.log(error))
-  }
 }
 </script>
 <style>
