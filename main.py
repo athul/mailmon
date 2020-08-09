@@ -19,7 +19,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-def getEmails(user_type:str,rn:List[int]=None)->List:
+async def getEmails(user_type:str,rn:List[int]=None)->List:
     if user_type == "cs":
         with open('data/emails-cs.json') as f:
             data = json.load(f)
@@ -51,7 +51,7 @@ def getEmails(user_type:str,rn:List[int]=None)->List:
 
 @app.get("/email/{user_type}")
 async def getEmail(user_type:str,) -> List:
-    return  getEmails(user_type)    
+    return await getEmails(user_type)    
 
 @app.post("/md")
 async def renderMD(mdb:str=Form(...)):
@@ -59,6 +59,7 @@ async def renderMD(mdb:str=Form(...)):
 
 @app.post("/send")
 async def sendEmail(
+    subject:str= Form(...),
     email_to:Optional[str] = Form(None),
     roll_no:Optional[str] = Form(None),
     content:str = Form(...)
@@ -66,10 +67,11 @@ async def sendEmail(
     mdrender=md.markdown(text=content)
     print(roll_no)
     if roll_no is None:
-        emails =  getEmails(email_to)
-        return {"email":emails,"md":str(mdrender)}
+        emails = await getEmails(email_to)
+        return {"email":emails,"subject":subject,"md":str(mdrender)}
     else:
         roll_nos = [int(x) for x in roll_no.split(",")]
-        emails =  getEmails(None,rn=roll_nos)
-        return {"email":emails,"md":str(mdrender)}
+        emails = await getEmails(None,rn=roll_nos)
+        
+    return {"email":emails,"subject":subject,"md":str(mdrender)}
         # return {"email":"ee@aa","md":"<h2>Error</h2>"} 

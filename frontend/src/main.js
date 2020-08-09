@@ -3,6 +3,7 @@ import App from './App.vue'
 import axios from 'axios'
 import VueFormulate from '@braid/vue-formulate'
 
+import "@/static/snow.min.css"
 
 Vue.use(VueFormulate)
 Vue.config.productionTip = false

@@ -1,11 +1,11 @@
 <template>
   <div id="app">
-    <Index msg="Welcome to Your Vue.js App"/>
+    <Index/>
   </div>
 </template>
 
 <script>
-import Index from './components/HelloWorld.vue'
+import Index from './components/Index.vue'
 
 export default {
   name: 'App',

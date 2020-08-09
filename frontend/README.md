@@ -1,4 +1,4 @@
-# hello-world
+# MailMon
 
 ## Project setup
 ```
