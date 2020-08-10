@@ -113,7 +113,8 @@ export default {
         .then(
           (response) => (
             (this.markdown = response.data.md),
-            (this.emails = response.data.email)
+            (this.emails = response.data.email),
+            console.log(response.data.mailresp)
           )
         )
         .catch((error) => console.log(error));

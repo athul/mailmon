@@ -2,6 +2,8 @@ import json
 from typing import Optional, List, Dict
 from fastapi import FastAPI, Form
 from pydantic import BaseModel
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail 
 import markdown2 as md
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -19,6 +21,26 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+
+async def sendEmails(emails:List,sub:str,body:str):
+    resp_code = []
+    for email in emails:
+        mail = Mail(
+            from_email="athul8720@gmail.com",
+            subject=sub,
+            to_emails=email,
+            html_content=body
+            )
+        try:
+            sg = SendGridAPIClient()
+            resp = sg.send(mail)
+            resp_code.append([email,str(resp.status_code)])
+        except Exception as e:
+            resp_code.append([email,None])
+            print(f"Could not send email to {to} due {str(e)}")
+    return resp_code
 async def getEmails(user_type:str,rn:List[int]=None)->List:
     if user_type == "cs":
         with open('data/emails-cs.json') as f:
@@ -50,7 +72,7 @@ async def getEmails(user_type:str,rn:List[int]=None)->List:
     return emails
 
 @app.get("/email/{user_type}")
-async def getEmail(user_type:str,) -> List:
+async def getEmailfromreq(user_type:str,) -> List:
     return await getEmails(user_type)    
 
 @app.post("/md")
@@ -58,7 +80,7 @@ async def renderMD(mdb:str=Form(...)):
     return md.markdown(text=mdb)
 
 @app.post("/send")
-async def sendEmail(
+async def sendEmailfromreq(
     subject:str= Form(...),
     email_to:Optional[str] = Form(None),
     roll_no:Optional[str] = Form(None),
@@ -68,10 +90,11 @@ async def sendEmail(
     print(roll_no)
     if roll_no is None:
         emails = await getEmails(email_to)
+        
         return {"email":emails,"subject":subject,"md":str(mdrender)}
     else:
         roll_nos = [int(x) for x in roll_no.split(",")]
         emails = await getEmails(None,rn=roll_nos)
-        
-    return {"email":emails,"subject":subject,"md":str(mdrender)}
+        mailresp = await sendEmails(emails,subject,str(mdrender))
+    return {"email":emails,"subject":subject,"md":str(mdrender),"mailresp":mailresp}
         # return {"email":"ee@aa","md":"<h2>Error</h2>"} 
