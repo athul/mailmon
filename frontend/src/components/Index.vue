@@ -62,10 +62,11 @@
     <div v-if="premd == true" v-html="markdown">
     </div>
     </div>
+    <div>{{emresp}}</div>
     <br />
-    <div v-for="email in emails" :key="email">
+    <!-- <div v-for="email in emails" :key="email">
       <div>{{ email }}</div>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -82,6 +83,7 @@ export default {
       rn: "",
       sub: "",
       premd: false,
+      emresp:''
     };
   },
   methods: {
@@ -90,7 +92,7 @@ export default {
       var mdForm = new FormData();
       mdForm.append("mdb", this.md);
       this.$http
-        .post("http://localhost:8000/md", mdForm, {
+        .post("https://1zv2ou.deta.dev/md", mdForm, {
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
           },
@@ -114,7 +116,8 @@ export default {
           (response) => (
             (this.markdown = response.data.md),
             (this.emails = response.data.email),
-            console.log(response.data.mailresp)
+            (this.emresp = response.data.mailresp),
+            console.log(this.emresp)
           )
         )
         .catch((error) => console.log(error));

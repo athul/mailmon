@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail 
 import markdown2 as md
+import logging
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -12,6 +13,7 @@ app = FastAPI()
 origins = [
     "http://localhost",
     "http://localhost:8080",
+    "https://1zv2ou.deta.dev/"
 ]
 
 app.add_middleware(
@@ -33,13 +35,14 @@ async def sendEmails(emails:List,sub:str,body:str):
             to_emails=email,
             html_content=body
             )
+        logging.error(email)
         try:
             sg = SendGridAPIClient()
             resp = sg.send(mail)
             resp_code.append([email,str(resp.status_code)])
         except Exception as e:
             resp_code.append([email,None])
-            print(f"Could not send email to {to} due {str(e)}")
+            logging.error(f"Could not send email to {to} due {str(e)}")
     return resp_code
 async def getEmails(user_type:str,rn:List[int]=None)->List:
     if user_type == "cs":
@@ -90,8 +93,8 @@ async def sendEmailfromreq(
     print(roll_no)
     if roll_no is None:
         emails = await getEmails(email_to)
-        
-        return {"email":emails,"subject":subject,"md":str(mdrender)}
+        mailresp = await sendEmails(emails,subject,str(mdrender))
+        return {"email":emails,"subject":subject,"md":str(mdrender),"mailresp":mailresp}
     else:
         roll_nos = [int(x) for x in roll_no.split(",")]
         emails = await getEmails(None,rn=roll_nos)
