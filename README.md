@@ -32,7 +32,7 @@ $ npm run serve
 ```
 Dev Server will start at port 8080
 
-![](/mailmon-fd.png)
+![](/frontend/mailmon-fd.png)
 
 ### Contributing
 Possibly I'll rewrite the backend to Go to try the speed. Yeah and I'm accepting PRs and Issues. Feel free to open One😄
