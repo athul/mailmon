@@ -42,7 +42,7 @@ async def sendEmails(emails:List,sub:str,body:str):
             resp_code.append([email,str(resp.status_code)])
         except Exception as e:
             resp_code.append([email,None])
-            logging.error(f"Could not send email to {to} due {str(e)}")
+            logging.info(f"Could not send email to {email} due {str(e)}")
     return resp_code
 async def getEmails(user_type:str,rn:List[int]=None)->List:
     if user_type == "cs":

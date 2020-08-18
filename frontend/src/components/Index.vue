@@ -16,7 +16,7 @@
         type="textarea"
         v-model="md"
         label="Email Content"
-        validation="required|max:200,length"
+        validation="required"
         validation-name="Email Content"
         error-behavior="live"
         placeholder="Enter content in Markdown Format. Max 200 Characters"
