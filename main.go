@@ -21,8 +21,8 @@ type Student struct {
 	Email string `json:"Email"`
 }
 type emresp struct {
-	Email string
-	code  int
+	Email string `json:"email"`
+	Code  int    `json:"code"`
 }
 
 func getStudents() []Student {
@@ -37,15 +37,15 @@ func getStudents() []Student {
 func sendEmails(c *gin.Context) {
 	client := sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))
 	var mailresp = make(map[string]int)
+	var emailresp []emresp
 	stds := getStudents()
 	subject := c.PostForm("subject")
 	content := c.PostForm("content")
 	from := mail.NewEmail("Athul Cyriac Ajay", "athul8720@gmail.com")
 	htmlContent := string(md.ToHTML([]byte(content), nil, nil))
 	for i := 0; i < len(stds); i++ {
-		log.Infof("Name:\t%s", stds[i].Name)
+		log.Infof("Name: %s | Email: %s", stds[i].Name, stds[i].Email)
 		to := mail.NewEmail(stds[i].Name, stds[i].Email)
-		fmt.Println(to.Address)
 		message := mail.NewSingleEmail(from, subject, to, "This", htmlContent)
 		resp, err := client.Send(message)
 		if err != nil {
@@ -57,7 +57,17 @@ func sendEmails(c *gin.Context) {
 		}
 	}
 	fmt.Println(mailresp)
-	c.String(200, "Emails Send")
+	for k, v := range mailresp {
+		emailresp = append(emailresp, emresp{
+			Email: k,
+			Code:  v,
+		})
+	}
+	c.JSON(200, gin.H{
+		"mailresp": emailresp,
+		"md":       htmlContent,
+		"subject":  subject,
+	})
 }
 func getEmail(c *gin.Context) {
 	stds := getStudents()
