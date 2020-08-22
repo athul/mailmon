@@ -15,3 +15,5 @@ yarn-error.log*
 *.sln
 dt/
 .deta/
+.air.conf
+tmp/
