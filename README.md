@@ -1,22 +1,13 @@
 # Mailmon
-MailMon is an Mass Emailer with a Vue Frontend and a FastAPI Backend and uses SendGrid's API to send emails to groups of People.
+MailMon is an Mass Emailer with a Vue Frontend and a Go Backend(Gin) and uses SendGrid's API to send emails to groups of People.
 
 Mailmon is made and currently used for a sending emails to all students in My class and for educational purposes. 
 
 ## Using it
-Since sending emails to many people take quite some time and server's power to compute. You can use it locally
+Since sending emails to many people take quite some time and server's power to compute. It's better that you use it locally.
 - Clone the Project
-#### Python
-
-- Install Python Dependencies
-- Get a SendGrid API key from https://sendgrid.com
-- Run server
-```bash
-$ uvicorn main:app --reload
-```
-Server will start at port 8000
-
 #### Frontend
+
 - `$ cd frontend`
 - Use Yarn or Npm to install the dependencies
 ```bash
@@ -24,13 +15,36 @@ $ yarn install
 # OR
 $ npm install
 ```
-- Run server using 
+- Build the Files
 ```bash
-$ yarn serve
+$ yarn build
 #OR
-$ npm run serve
+$ npm run build
 ```
-Dev Server will start at port 8080
+This command will generate static(HTML,CSS and JS) files which will be used by the server to show the webpage like below
+
+#### Server
+- Install Go and do the setup
+- run `go mod download` to download the dependencies
+- Run the server
+
+```bash
+$ go run main.go # to run the server 
+# OR
+$ go build main.go # generates static binary
+$ ./main # Execute the binary
+```
+
+A server will start at port [8080](http://localhost:8080). The `/` endpoint will show our frontend.
+
+#### SendGrid
+
+- Create a SendGrid Account and Create an API Key
+- Save the API Key as a environment variable as `SENDGRID_API_KEY`
+  
+```bash
+$ export SENDGRID_API_KEY = <api_key>
+```
 
 ![](/frontend/mailmon-fd.png)
 

@@ -27,7 +27,7 @@ type emresp struct {
 
 func getStudents() []Student {
 	var student []Student
-	allstudents, _ := ioutil.ReadFile("athul-ems.json")
+	allstudents, _ := ioutil.ReadFile("./data/athul.json")
 
 	json.Unmarshal(allstudents, &student)
 
@@ -44,7 +44,6 @@ func sendEmails(c *gin.Context) {
 	from := mail.NewEmail("Athul Cyriac Ajay", "athul8720@gmail.com")
 	htmlContent := string(md.ToHTML([]byte(content), nil, nil))
 	for i := 0; i < len(stds); i++ {
-		log.Infof("Name: %s | Email: %s", stds[i].Name, stds[i].Email)
 		to := mail.NewEmail(stds[i].Name, stds[i].Email)
 		message := mail.NewSingleEmail(from, subject, to, "This", htmlContent)
 		resp, err := client.Send(message)
@@ -53,6 +52,7 @@ func sendEmails(c *gin.Context) {
 		} else {
 			log.Infoln(resp.StatusCode, resp.Body)
 			mailresp[stds[i].Email] = resp.StatusCode
+			log.Infof("Email Successfully sent to: %s", stds[i].Email)
 			log.Println(mailresp)
 		}
 	}
@@ -68,13 +68,6 @@ func sendEmails(c *gin.Context) {
 		"md":       htmlContent,
 		"subject":  subject,
 	})
-}
-func getEmail(c *gin.Context) {
-	stds := getStudents()
-	for i := 0; i < len(stds); i++ {
-		c.String(200, stds[i].Name+"\n"+stds[i].Email)
-	}
-	// c.String(200, "Emails Printed in Log")
 }
 func renderMD(c *gin.Context) {
 	mdr := c.PostForm("mdb")
@@ -95,7 +88,6 @@ func main() {
 	// 	c.String(200, "Hello, World!")
 	// })
 	app.POST("/md", renderMD)
-	app.GET("/em", getEmail)
 	app.POST("/send", sendEmails)
 	app.Use(static.Serve("/", static.LocalFile("./frontend/dist", false)))
 	app.Run(":8080")
