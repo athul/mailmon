@@ -17,3 +17,4 @@ dt/
 .deta/
 .air.conf
 tmp/
+.env
