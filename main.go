@@ -9,9 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	md "github.com/gomarkdown/markdown"
 	"github.com/joho/godotenv"
-
-	// "github.com/sendgrid/sendgrid-go"
-	// "github.com/sendgrid/sendgrid-go/helpers/mail"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/mail.v2"
 )
@@ -37,7 +34,6 @@ func getStudents() []Student {
 }
 
 func sendEmails(c *gin.Context) {
-	// client := sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))
 	d := mail.NewDialer("smtp.gmail.com", 587, os.Getenv("USERNAME"), os.Getenv("PASSWORD"))
 	d.StartTLSPolicy = mail.MandatoryStartTLS
 	s, err := d.Dial()
@@ -49,27 +45,12 @@ func sendEmails(c *gin.Context) {
 	stds := getStudents()
 	subject := c.PostForm("subject")
 	content := c.PostForm("content")
-	// from := mail.NewEmail("Athul Cyriac Ajay", "athul8720@gmail.com")
 	htmlContent := string(md.ToHTML([]byte(content), nil, nil))
-	// for i := 0; i < len(stds); i++ {
-	// 	to := mail.NewEmail(stds[i].Name, stds[i].Email)
-	// 	message := mail.NewSingleEmail(from, subject, to, "This", htmlContent)
-	// 	resp, err := client.Send(message)
-	// 	if err != nil {
-	// 		log.Errorln(err)
-	// 	} else {
-	// 		log.Infoln(resp.StatusCode, resp.Body)
-	// 		mailresp[stds[i].Email] = resp.StatusCode
-	// 		log.Infof("Email Successfully sent to: %s", stds[i].Email)
-	// 		log.Println(mailresp)
-	// 	}
-	// }
 	m := mail.NewMessage()
-
 	for _, r := range stds {
 		m.SetHeader("Subject", subject)
 		m.SetBody("text/html", htmlContent)
-		m.SetAddressHeader("From", os.Getenv("FROM_EMAIL"), "Athul Cyriac")
+		m.SetAddressHeader("From", os.Getenv("USERNAME"), "TinkerHub CEK")
 		m.SetAddressHeader("To", r.Email, r.Name)
 		err := mail.Send(s, m)
 		if err != nil {
@@ -102,19 +83,13 @@ func renderMD(c *gin.Context) {
 	} else {
 		log.Info("MD Parsing Failed - Empty String")
 	}
-	// return "", fmt.Errorf("Could not Parse Markdown since it's empty")
 }
 func main() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	// stds := getStudents()
 	app := gin.Default()
-
-	// app.GET("/", func(c *gin.Context) {
-	// 	c.String(200, "Hello, World!")
-	// })
 	app.POST("/md", renderMD)
 	app.POST("/send", sendEmails)
 	app.Use(static.Serve("/", static.LocalFile("./frontend/dist", false)))
