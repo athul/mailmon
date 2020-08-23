@@ -3,13 +3,13 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"os"
 
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	md "github.com/gomarkdown/markdown"
 	"github.com/joho/godotenv"
-	log "github.com/sirupsen/logrus"
 	"gopkg.in/mail.v2"
 )
 
@@ -28,7 +28,9 @@ func getStudents() []Student {
 	var student []Student
 	allstudents, _ := ioutil.ReadFile("./data/athul.json")
 
-	json.Unmarshal(allstudents, &student)
+	if err := json.Unmarshal(allstudents, &student); err != nil {
+		log.Printf("Unmarhsall Error due to %v", err)
+	}
 
 	return student
 }
@@ -38,7 +40,7 @@ func sendEmails(c *gin.Context) {
 	d.StartTLSPolicy = mail.MandatoryStartTLS
 	s, err := d.Dial()
 	if err != nil {
-		log.Errorln(err)
+		log.Println(err)
 	}
 	var mailresp = make(map[string]int)
 	var emailresp []emresp
@@ -55,7 +57,7 @@ func sendEmails(c *gin.Context) {
 		err := mail.Send(s, m)
 		if err != nil {
 			mailresp[r.Email] = 400
-			log.Errorln("Could not send email to %q: %v", r.Email, err)
+			log.Printf("Could not send email to %q: %v", r.Email, err)
 		} else {
 			mailresp[r.Email] = 200
 		}
@@ -78,15 +80,14 @@ func renderMD(c *gin.Context) {
 	mdr := c.PostForm("mdb")
 	if mdr != "" {
 		renderedMD := md.ToHTML([]byte(mdr), nil, nil)
-		log.Info("MD parsing Successfull")
+		log.Print("MD parsing Successfull")
 		c.String(200, string(renderedMD))
 	} else {
-		log.Info("MD Parsing Failed - Empty String")
+		log.Print("MD Parsing Failed - Empty String")
 	}
 }
 func main() {
-	err := godotenv.Load()
-	if err != nil {
+	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
 	app := gin.Default()
