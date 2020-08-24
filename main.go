@@ -2,16 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	md "github.com/gomarkdown/markdown"
-	"github.com/sendgrid/sendgrid-go"
-	"github.com/sendgrid/sendgrid-go/helpers/mail"
-	log "github.com/sirupsen/logrus"
+	"github.com/joho/godotenv"
+	"gopkg.in/mail.v2"
 )
 
 // Student struct handles the JSON
@@ -29,34 +28,42 @@ func getStudents() []Student {
 	var student []Student
 	allstudents, _ := ioutil.ReadFile("./data/athul.json")
 
-	json.Unmarshal(allstudents, &student)
+	if err := json.Unmarshal(allstudents, &student); err != nil {
+		log.Printf("Unmarhsall Error due to %v", err)
+	}
 
 	return student
 }
 
 func sendEmails(c *gin.Context) {
-	client := sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))
+	d := mail.NewDialer("smtp.gmail.com", 587, os.Getenv("USERNAME"), os.Getenv("PASSWORD"))
+	d.StartTLSPolicy = mail.MandatoryStartTLS
+	s, err := d.Dial()
+	if err != nil {
+		log.Println(err)
+	}
 	var mailresp = make(map[string]int)
 	var emailresp []emresp
 	stds := getStudents()
 	subject := c.PostForm("subject")
 	content := c.PostForm("content")
-	from := mail.NewEmail("Athul Cyriac Ajay", "athul8720@gmail.com")
 	htmlContent := string(md.ToHTML([]byte(content), nil, nil))
-	for i := 0; i < len(stds); i++ {
-		to := mail.NewEmail(stds[i].Name, stds[i].Email)
-		message := mail.NewSingleEmail(from, subject, to, "This", htmlContent)
-		resp, err := client.Send(message)
+	m := mail.NewMessage()
+	for _, r := range stds {
+		m.SetHeader("Subject", subject)
+		m.SetBody("text/html", htmlContent)
+		m.SetAddressHeader("From", os.Getenv("USERNAME"), "TinkerHub CEK")
+		m.SetAddressHeader("To", r.Email, r.Name)
+		err := mail.Send(s, m)
 		if err != nil {
-			log.Errorln(err)
+			mailresp[r.Email] = 400
+			log.Printf("Could not send email to %q: %v", r.Email, err)
 		} else {
-			log.Infoln(resp.StatusCode, resp.Body)
-			mailresp[stds[i].Email] = resp.StatusCode
-			log.Infof("Email Successfully sent to: %s", stds[i].Email)
-			log.Println(mailresp)
+			mailresp[r.Email] = 200
 		}
+		m.Reset()
 	}
-	fmt.Println(mailresp)
+	log.Println(mailresp)
 	for k, v := range mailresp {
 		emailresp = append(emailresp, emresp{
 			Email: k,
@@ -73,20 +80,17 @@ func renderMD(c *gin.Context) {
 	mdr := c.PostForm("mdb")
 	if mdr != "" {
 		renderedMD := md.ToHTML([]byte(mdr), nil, nil)
-		log.Info("MD parsing Successfull")
+		log.Print("MD parsing Successfull")
 		c.String(200, string(renderedMD))
 	} else {
-		log.Info("MD Parsing Failed - Empty String")
+		log.Print("MD Parsing Failed - Empty String")
 	}
-	// return "", fmt.Errorf("Could not Parse Markdown since it's empty")
 }
 func main() {
-	// stds := getStudents()
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	app := gin.Default()
-
-	// app.GET("/", func(c *gin.Context) {
-	// 	c.String(200, "Hello, World!")
-	// })
 	app.POST("/md", renderMD)
 	app.POST("/send", sendEmails)
 	app.Use(static.Serve("/", static.LocalFile("./frontend/dist", false)))
