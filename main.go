@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
@@ -36,6 +38,8 @@ func getStudents() []Student {
 }
 
 func sendEmails(c *gin.Context) {
+	start := time.Now()
+	var wg sync.WaitGroup
 	d := mail.NewDialer("smtp.gmail.com", 587, os.Getenv("USERNAME"), os.Getenv("PASSWORD"))
 	d.StartTLSPolicy = mail.MandatoryStartTLS
 	s, err := d.Dial()
@@ -48,32 +52,39 @@ func sendEmails(c *gin.Context) {
 	subject := c.PostForm("subject")
 	content := c.PostForm("content")
 	htmlContent := string(md.ToHTML([]byte(content), nil, nil))
-	m := mail.NewMessage()
-	for _, r := range stds {
-		m.SetHeader("Subject", subject)
-		m.SetBody("text/html", htmlContent)
-		m.SetAddressHeader("From", os.Getenv("USERNAME"), "TinkerHub CEK")
-		m.SetAddressHeader("To", r.Email, r.Name)
-		err := mail.Send(s, m)
-		if err != nil {
-			mailresp[r.Email] = 400
-			log.Printf("Could not send email to %q: %v", r.Email, err)
-		} else {
-			mailresp[r.Email] = 200
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		m := mail.NewMessage()
+		for i, r := range stds {
+			log.Println(i + 1)
+			m.SetHeader("Subject", subject)
+			m.SetBody("text/html", htmlContent)
+			m.SetAddressHeader("From", os.Getenv("USERNAME"), "TinkerHub CEK")
+			m.SetAddressHeader("To", r.Email, r.Name)
+			if err := mail.Send(s, m); err != nil {
+				mailresp[r.Email] = 400
+				log.Printf("Could not send email to %q: %v", r.Email, err)
+			} else {
+				mailresp[r.Email] = 200
+			}
+			m.Reset()
 		}
-		m.Reset()
-	}
-	log.Println(mailresp)
-	for k, v := range mailresp {
-		emailresp = append(emailresp, emresp{
-			Email: k,
-			Code:  v,
-		})
-	}
+		log.Println(mailresp)
+
+		for k, v := range mailresp {
+			emailresp = append(emailresp, emresp{
+				Email: k,
+				Code:  v,
+			})
+		}
+	}()
+	wg.Wait()
 	c.JSON(200, gin.H{
 		"mailresp": emailresp,
 		"md":       htmlContent,
 		"subject":  subject,
+		"elapsed":  time.Since(start).String(),
 	})
 }
 func renderMD(c *gin.Context) {
@@ -86,6 +97,7 @@ func renderMD(c *gin.Context) {
 		log.Print("MD Parsing Failed - Empty String")
 	}
 }
+
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
