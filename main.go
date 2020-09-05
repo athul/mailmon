@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	md "github.com/gomarkdown/markdown"
@@ -103,6 +104,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 	app := gin.Default()
+	app.Use(cors.Default())
 	app.POST("/md", renderMD)
 	app.POST("/send", sendEmails)
 	app.Use(static.Serve("/", static.LocalFile("./frontend/dist", false)))

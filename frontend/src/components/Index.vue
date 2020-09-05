@@ -58,6 +58,7 @@
       
     </FormulateForm>
     <div class="render">
+    <div v-if="elapsed!==''">Time Took to send Emails: {{elapsed}}</div>
     <div v-if="sub !== ''">Subject: <em>{{sub}}</em></div>
     <div v-if="premd == true" v-html="markdown">
     </div>
@@ -83,7 +84,8 @@ export default {
       rn: "",
       sub: "",
       premd: false,
-      emresp:''
+      emresp:'',
+      elapsed:''
     };
   },
   methods: {
@@ -92,7 +94,7 @@ export default {
       var mdForm = new FormData();
       mdForm.append("mdb", this.md);
       this.$http
-        .post("https://1zv2ou.deta.dev/md", mdForm, {
+        .post("http://localhost:8080/md", mdForm, {
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
           },
@@ -107,7 +109,7 @@ export default {
       mainForm.append("content", this.md);
       mainForm.append("subject", this.sub);
       this.$http
-        .post("http://localhost:8000/send", mainForm, {
+        .post("http://localhost:8080/send", mainForm, {
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
           },
@@ -117,6 +119,7 @@ export default {
             (this.markdown = response.data.md),
             (this.emails = response.data.email),
             (this.emresp = response.data.mailresp),
+            (this.elapsed = response.data.elapsed),
             console.log(this.emresp)
           )
         )
