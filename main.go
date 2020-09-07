@@ -16,17 +16,21 @@ import (
 	"gopkg.in/mail.v2"
 )
 
-// Student struct handles the JSON
+// Student struct handles the
+// parsing of JSON from the data files
 type Student struct {
 	Name  string `json:"Name"`
 	Roll  int    `json:"rn"`
 	Email string `json:"Email"`
 }
+
+// Response once the Emails are sent
 type emresp struct {
 	Email string `json:"email"`
 	Code  int    `json:"code"`
 }
 
+// Parses the JSON Files and returns a Student Type
 func getStudents() []Student {
 	var student []Student
 	allstudents, _ := ioutil.ReadFile("./data/athul.json")
@@ -38,6 +42,7 @@ func getStudents() []Student {
 	return student
 }
 
+// Sends all the Emails
 func sendEmails(c *gin.Context) {
 	start := time.Now()
 	var wg sync.WaitGroup
@@ -47,6 +52,9 @@ func sendEmails(c *gin.Context) {
 	if err != nil {
 		log.Println(err)
 	}
+	// Map for making a Json response of Emails with a status code and Email
+	// 200 → Email Successfully Sent
+	// 400 → Email sending unsuccessfull
 	var mailresp = make(map[string]int)
 	var emailresp []emresp
 	stds := getStudents()
@@ -54,6 +62,7 @@ func sendEmails(c *gin.Context) {
 	content := c.PostForm("content")
 	htmlContent := string(md.ToHTML([]byte(content), nil, nil))
 	wg.Add(1)
+	// Send Email Asynchronously using a goroutine
 	go func() {
 		defer wg.Done()
 		m := mail.NewMessage()
@@ -85,9 +94,11 @@ func sendEmails(c *gin.Context) {
 		"mailresp": emailresp,
 		"md":       htmlContent,
 		"subject":  subject,
-		"elapsed":  time.Since(start).String(),
+		"elapsed":  time.Since(start).String(), // Displays execution time
 	})
 }
+
+// Render's Markdown from Request
 func renderMD(c *gin.Context) {
 	mdr := c.PostForm("mdb")
 	if mdr != "" {
@@ -100,6 +111,7 @@ func renderMD(c *gin.Context) {
 }
 
 func main() {
+	// Loads the Env vars
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}

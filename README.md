@@ -1,6 +1,6 @@
 # Mailmon
 
-MailMon is an Mass Emailer with a Vue Frontend and a Go Backend(Gin) and uses Gmail's SMTP(with ) to send emails to groups of People.
+MailMon is a Mass Emailer with a Vue Frontend and a Go Backend(Gin) and uses Gmail's SMTP to send emails to groups of People.
 
 Mailmon is made and currently used for a sending emails to all students in My class and for educational purposes.
 
@@ -61,3 +61,7 @@ PASSWORD=<your_email_password>
 ### Contributing
 
 Possibly I'll rewrite the backend to Go to try the speed. Yeah and I'm accepting PRs and Issues. Feel free to open One😄
+
+## TODO
+
+- [] Email Templates to improve visibility
