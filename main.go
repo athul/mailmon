@@ -109,16 +109,21 @@ func renderMD(c *gin.Context) {
 		log.Print("MD Parsing Failed - Empty String")
 	}
 }
-
-func main() {
+func init() {
 	// Loads the Env vars
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
+}
+func main() {
 	app := gin.Default()
 	app.Use(cors.Default())
 	app.POST("/md", renderMD)
 	app.POST("/send", sendEmails)
-	app.Use(static.Serve("/", static.LocalFile("./frontend/dist", false)))
+	app.Use(static.Serve("/mon", static.LocalFile("./frontend/dist", false)))
+	app.LoadHTMLGlob("*.html")
+	app.GET("/", func(c *gin.Context) {
+		c.HTML(200, "layout.html", nil)
+	})
 	app.Run(":8080")
 }
