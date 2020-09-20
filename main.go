@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 
@@ -32,13 +34,14 @@ type emresp struct {
 
 // Parses the JSON Files and returns a Student Type
 func getStudents() []Student {
-	var student []Student
-	allstudents, _ := ioutil.ReadFile("./data/athul.json")
+	var (
+		student []Student
+	)
+	allstudents, _ := ioutil.ReadFile("./data/athul-test.json")
 
 	if err := json.Unmarshal(allstudents, &student); err != nil {
 		log.Printf("Unmarhsall Error due to %v", err)
 	}
-
 	return student
 }
 
@@ -47,54 +50,46 @@ func sendEmails(c *gin.Context) {
 	start := time.Now()
 	var wg sync.WaitGroup
 	d := mail.NewDialer("smtp.gmail.com", 587, os.Getenv("USERNAME"), os.Getenv("PASSWORD"))
+	// d := mail.Dialer{Host: "localhost", Port: 1025}
 	d.StartTLSPolicy = mail.MandatoryStartTLS
 	s, err := d.Dial()
 	if err != nil {
 		log.Println(err)
 	}
 	// Map for making a Json response of Emails with a status code and Email
-	// 200 → Email Successfully Sent
-	// 400 → Email sending unsuccessfull
-	var mailresp = make(map[string]int)
-	var emailresp []emresp
+
 	stds := getStudents()
+	log.Println(len(stds), stds)
 	subject := c.PostForm("subject")
 	content := c.PostForm("content")
-	htmlContent := string(md.ToHTML([]byte(content), nil, nil))
-	wg.Add(1)
+	htmlContent := md.ToHTML([]byte(content), nil, nil)
+	mdhtml := template.HTML(htmlContent)
+	wg.Add(len(stds))
 	// Send Email Asynchronously using a goroutine
-	go func() {
-		defer wg.Done()
-		m := mail.NewMessage()
-		for i, r := range stds {
+	for i, r := range stds {
+		go func(i int, r Student) {
+			defer wg.Done()
+			m := mail.NewMessage()
+
 			log.Println(i + 1)
 			m.SetHeader("Subject", subject)
-			m.SetBody("text/html", htmlContent)
+			m.SetBody("text/html", renderEmails(mdhtml))
 			m.SetAddressHeader("From", os.Getenv("USERNAME"), "TinkerHub CEK")
 			m.SetAddressHeader("To", r.Email, r.Name)
 			if err := mail.Send(s, m); err != nil {
-				mailresp[r.Email] = 400
 				log.Printf("Could not send email to %q: %v", r.Email, err)
-			} else {
-				mailresp[r.Email] = 200
 			}
 			m.Reset()
-		}
-		log.Println(mailresp)
 
-		for k, v := range mailresp {
-			emailresp = append(emailresp, emresp{
-				Email: k,
-				Code:  v,
-			})
-		}
-	}()
+		}(i, r)
+	}
+	log.Println(runtime.NumGoroutine())
+	log.Printf("Goroutines = %d", runtime.NumGoroutine())
 	wg.Wait()
 	c.JSON(200, gin.H{
-		"mailresp": emailresp,
-		"md":       htmlContent,
-		"subject":  subject,
-		"elapsed":  time.Since(start).String(), // Displays execution time
+		"md":      string(htmlContent),
+		"subject": subject,
+		"elapsed": time.Since(start).String(), // Displays execution time
 	})
 }
 
