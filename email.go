@@ -25,6 +25,12 @@ func renderEmails(md template.HTML) string {
 		log.Println(err)
 	}
 	data := EmailPageData{
+		Buttons: []Button{
+			{
+				Text: "Jiofi CLI",
+				Link: "https://blog.athulcyriac.co/jiofi/",
+			},
+		},
 		MD: md,
 	}
 
@@ -47,6 +53,7 @@ func getEmailTemplate() string {
         padding: 0 !important;
         height: 100% !important;
         width: 100% !important;
+        font-family:Avenir;
       }
       .body-action {
         width: 100%;
@@ -55,16 +62,18 @@ func getEmailTemplate() string {
         text-align: center;
       }
       .button {
-        background-color: blue;
-        border: 1px solid blue;
+        background-color: #f07d6e;
         display: inline-block;
         cursor: pointer;
-        color: #ffffff;
-        font-family: Arial;
+        color: white;
+        font-family: Avenir;
         font-size: 17px;
         padding: 16px 31px;
         text-decoration: none;
+        border-radius:50px;
         text-shadow: 0px 1px 0px #2f6627;
+        -webkit-text-size-adjust: none;
+        mso-hide: all;
       }
       .email-logo {
         max-height: 50px;
@@ -73,14 +82,12 @@ func getEmailTemplate() string {
         padding: 25px 0;
         text-align: center;
       }
-      @media only screen and (max-width: 500px) {
-        .button {
-          width: 100% !important;
-        }
 	  }
-	  .markdown{
-		  font-family:Helvetica;
-	  }
+    @media only screen and (max-width: 500px) {
+      .button {
+        width: 100% !important;
+      }
+    }
     </style>
   </head>
   <body>
@@ -91,9 +98,9 @@ func getEmailTemplate() string {
     <table class="body-action">
       <tr>
         <td align="center">
-          <div>
+          <div class="button">
             {{ range .Buttons }}
-            <a href="{{ .Link }}" class="button" target="_blank">
+            <a href="{{ .Link }}" target="_blank">
               {{ .Text }}
             </a>
             {{ end }}

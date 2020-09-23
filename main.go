@@ -37,7 +37,7 @@ func getStudents() []Student {
 	var (
 		student []Student
 	)
-	allstudents, _ := ioutil.ReadFile("./data/athul-test.json")
+	allstudents, _ := ioutil.ReadFile("./data/athul.json")
 
 	if err := json.Unmarshal(allstudents, &student); err != nil {
 		log.Printf("Unmarhsall Error due to %v", err)
@@ -49,8 +49,9 @@ func getStudents() []Student {
 func sendEmails(c *gin.Context) {
 	start := time.Now()
 	var wg sync.WaitGroup
-	d := mail.NewDialer("smtp.gmail.com", 587, os.Getenv("USERNAME"), os.Getenv("PASSWORD"))
-	// d := mail.Dialer{Host: "localhost", Port: 1025}
+	var mutex = &sync.Mutex{}
+	d := mail.NewDialer("smtp.yandex.com", 465, os.Getenv("USERNAME"), os.Getenv("PASSWORD"))
+	// d := mail.NewDialer("localhost", 1025, "athul", "athul")
 	d.StartTLSPolicy = mail.MandatoryStartTLS
 	s, err := d.Dial()
 	if err != nil {
@@ -74,16 +75,17 @@ func sendEmails(c *gin.Context) {
 			log.Println(i + 1)
 			m.SetHeader("Subject", subject)
 			m.SetBody("text/html", renderEmails(mdhtml))
-			m.SetAddressHeader("From", os.Getenv("USERNAME"), "TinkerHub CEK")
+			m.SetAddressHeader("From", os.Getenv("USERNAME"), "MailMon")
 			m.SetAddressHeader("To", r.Email, r.Name)
+			mutex.Lock()
 			if err := mail.Send(s, m); err != nil {
 				log.Printf("Could not send email to %q: %v", r.Email, err)
 			}
+			mutex.Unlock()
 			m.Reset()
 
 		}(i, r)
 	}
-	log.Println(runtime.NumGoroutine())
 	log.Printf("Goroutines = %d", runtime.NumGoroutine())
 	wg.Wait()
 	c.JSON(200, gin.H{
