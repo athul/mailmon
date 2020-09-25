@@ -37,7 +37,7 @@ func getStudents() []Student {
 	var (
 		student []Student
 	)
-	allstudents, _ := ioutil.ReadFile("./data/athul.json")
+	allstudents, _ := ioutil.ReadFile("./data/athul-1.json")
 
 	if err := json.Unmarshal(allstudents, &student); err != nil {
 		log.Printf("Unmarhsall Error due to %v", err)
@@ -47,19 +47,21 @@ func getStudents() []Student {
 
 // Sends all the Emails
 func sendEmails(c *gin.Context) {
-	start := time.Now()
-	var wg sync.WaitGroup
-	var mutex = &sync.Mutex{}
+	var (
+		start = time.Now()
+		wg    sync.WaitGroup
+		mutex = &sync.Mutex{}
+		stds  = getStudents()
+	)
 	d := mail.NewDialer("smtp.yandex.com", 465, os.Getenv("USERNAME"), os.Getenv("PASSWORD"))
-	// d := mail.NewDialer("localhost", 1025, "athul", "athul")
 	d.StartTLSPolicy = mail.MandatoryStartTLS
+	// d := mail.NewDialer("localhost", 1025, "athul", "athul")
 	s, err := d.Dial()
 	if err != nil {
 		log.Println(err)
 	}
 	// Map for making a Json response of Emails with a status code and Email
 
-	stds := getStudents()
 	log.Println(len(stds), stds)
 	subject := c.PostForm("subject")
 	content := c.PostForm("content")
@@ -89,7 +91,7 @@ func sendEmails(c *gin.Context) {
 	log.Printf("Goroutines = %d", runtime.NumGoroutine())
 	wg.Wait()
 	c.JSON(200, gin.H{
-		"md":      string(htmlContent),
+		"md":      renderEmails(mdhtml),
 		"subject": subject,
 		"elapsed": time.Since(start).String(), // Displays execution time
 	})
@@ -117,10 +119,6 @@ func main() {
 	app.Use(cors.Default())
 	app.POST("/md", renderMD)
 	app.POST("/send", sendEmails)
-	app.Use(static.Serve("/mon", static.LocalFile("./frontend/dist", false)))
-	app.LoadHTMLGlob("*.html")
-	app.GET("/", func(c *gin.Context) {
-		c.HTML(200, "layout.html", nil)
-	})
+	app.Use(static.Serve("/", static.LocalFile("./frontend/dist", false)))
 	app.Run(":8080")
 }
