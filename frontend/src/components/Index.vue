@@ -19,7 +19,7 @@
         validation="required"
         validation-name="Email Content"
         error-behavior="live"
-        placeholder="Enter content in Markdown Format. Max 200 Characters"
+        placeholder="Enter content in Markdown Format."
       />
       <div v-if="md !== ''">
       <FormulateInput
@@ -32,28 +32,10 @@
       <br/>
       <FormulateInput
         v-model="selected"
-        :options="{
-          all: 'All Students',
-          cs: 'Students in CS Dept.',
-          it: 'Students in IT',
-          reps: 'Email Class Reps',
-          roll: 'Email to Roll Numbers',
-        }"
         type="select"
         placeholder="Select an option"
         label="Select whom to send Emails to"
       />
-      <div v-if="selected === 'roll'">
-        <FormulateInput
-          v-model="rn"
-          type="text"
-          validation="required"
-          validation-name="Roll Number"
-          error-behavior="live"
-          placeholder ="Enter Roll Numbers of Students like 1,24,48,etc..."
-        />
-      </div>
-      
     <FormulateInput type="submit" name="Send Emails" />
       
     </FormulateForm>
@@ -78,7 +60,6 @@ export default {
     return {
       email: "",
       md: "",
-      selected: "",
       emails: "",
       markdown: "",
       rn: "",
@@ -104,7 +85,6 @@ export default {
     },
     sndems: function () {
       var mainForm = new FormData();
-      mainForm.append("email_to", this.selected);
       mainForm.append("roll_no", this.rn);
       mainForm.append("content", this.md);
       mainForm.append("subject", this.sub);

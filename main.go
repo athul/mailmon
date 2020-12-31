@@ -34,10 +34,8 @@ type emresp struct {
 
 // Parses the JSON Files and returns a Student Type
 func getStudents() []Student {
-	var (
-		student []Student
-	)
-	allstudents, _ := ioutil.ReadFile("./data/athul-1.json")
+	var student []Student
+	allstudents, _ := ioutil.ReadFile("./data/athul.json")
 
 	if err := json.Unmarshal(allstudents, &student); err != nil {
 		log.Printf("Unmarhsall Error due to %v", err)
@@ -53,9 +51,9 @@ func sendEmails(c *gin.Context) {
 		mutex = &sync.Mutex{}
 		stds  = getStudents()
 	)
-	d := mail.NewDialer("smtp.yandex.com", 465, os.Getenv("USERNAME"), os.Getenv("PASSWORD"))
-	d.StartTLSPolicy = mail.MandatoryStartTLS
-	// d := mail.NewDialer("localhost", 1025, "athul", "athul")
+	// d := mail.NewDialer("smtp.yandex.com", 465, os.Getenv("USERNAME"), os.Getenv("PASSWORD"))
+	// d.StartTLSPolicy = mail.MandatoryStartTLS
+	d := mail.NewDialer("localhost", 1025, "athul", "athul")
 	s, err := d.Dial()
 	if err != nil {
 		log.Println(err)
@@ -65,11 +63,13 @@ func sendEmails(c *gin.Context) {
 	log.Println(len(stds), stds)
 	subject := c.PostForm("subject")
 	content := c.PostForm("content")
-	htmlContent := md.ToHTML([]byte(content), nil, nil)
-	mdhtml := template.HTML(htmlContent)
 	wg.Add(len(stds))
+	var mdhtml template.HTML
 	// Send Email Asynchronously using a goroutine
 	for i, r := range stds {
+		ccontent := renderEmailTemplate(content, r)
+		htmlContent := md.ToHTML([]byte(ccontent), nil, nil)
+		mdhtml = template.HTML(htmlContent)
 		go func(i int, r Student) {
 			defer wg.Done()
 			m := mail.NewMessage()
