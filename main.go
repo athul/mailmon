@@ -5,13 +5,13 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
-	md "github.com/gomarkdown/markdown"
 	"github.com/joho/godotenv"
 	"gopkg.in/mail.v2"
 )
@@ -38,83 +38,69 @@ func getStudents() []Student {
 	if err := json.Unmarshal(allstudents, &student); err != nil {
 		log.Printf("Unmarhsall Error due to %v", err)
 	}
-
 	return student
 }
 
 // Sends all the Emails
 func sendEmails(c *gin.Context) {
-	start := time.Now()
-	var wg sync.WaitGroup
-	d := mail.NewDialer("smtp.gmail.com", 587, os.Getenv("USERNAME"), os.Getenv("PASSWORD"))
-	d.StartTLSPolicy = mail.MandatoryStartTLS
+	var (
+		start   = time.Now()
+		wg      sync.WaitGroup
+		mutex   = &sync.Mutex{}
+		stds    = getStudents()
+		emailfm string
+	)
+	// d := mail.NewDialer("smtp.yandex.com", 465, os.Getenv("USERNAME"), os.Getenv("PASSWORD"))
+	// d.StartTLSPolicy = mail.MandatoryStartTLS
+	d := mail.NewDialer("localhost", 1025, "athul", "athul")
 	s, err := d.Dial()
 	if err != nil {
 		log.Println(err)
 	}
 	// Map for making a Json response of Emails with a status code and Email
-	// 200 → Email Successfully Sent
-	// 400 → Email sending unsuccessfull
-	var mailresp = make(map[string]int)
-	var emailresp []emresp
-	stds := getStudents()
+
+	log.Println(len(stds), stds)
 	subject := c.PostForm("subject")
 	content := c.PostForm("content")
-	htmlContent := string(md.ToHTML([]byte(content), nil, nil))
-	wg.Add(1)
+	wg.Add(len(stds))
+	empage := EmailPageData{Rec: stds, MD: content}
 	// Send Email Asynchronously using a goroutine
-	go func() {
-		defer wg.Done()
-		m := mail.NewMessage()
-		for i, r := range stds {
-			log.Println(i + 1)
+	for i, r := range stds {
+		rndrctx := empage.newRenderContext(i)
+		go func(i int, r Student) {
+			defer wg.Done()
+			m := mail.NewMessage()
+			emailfm = rndrctx.renderEmails()
+			log.Println("Exec", i+1)
 			m.SetHeader("Subject", subject)
-			m.SetBody("text/html", htmlContent)
-			m.SetAddressHeader("From", os.Getenv("USERNAME"), "TinkerHub CEK")
+			m.SetBody("text/html", emailfm)
+			m.SetAddressHeader("From", os.Getenv("USERNAME"), "MailMon")
 			m.SetAddressHeader("To", r.Email, r.Name)
+			mutex.Lock()
 			if err := mail.Send(s, m); err != nil {
-				mailresp[r.Email] = 400
 				log.Printf("Could not send email to %q: %v", r.Email, err)
-			} else {
-				mailresp[r.Email] = 200
 			}
+			mutex.Unlock()
 			m.Reset()
-		}
-		log.Println(mailresp)
 
-		for k, v := range mailresp {
-			emailresp = append(emailresp, emresp{
-				Email: k,
-				Code:  v,
-			})
-		}
-	}()
+		}(i, r)
+	}
+	log.Printf("Goroutines = %d", runtime.NumGoroutine())
 	wg.Wait()
 	c.JSON(200, gin.H{
-		"mailresp": emailresp,
-		"md":       htmlContent,
-		"subject":  subject,
-		"elapsed":  time.Since(start).String(), // Displays execution time
+		"md":      emailfm,
+		"subject": subject,
+		"elapsed": time.Since(start).String(), // Displays execution time
 	})
 }
 
-// Render's Markdown from Request
-func renderMD(c *gin.Context) {
-	mdr := c.PostForm("mdb")
-	if mdr != "" {
-		renderedMD := md.ToHTML([]byte(mdr), nil, nil)
-		log.Print("MD parsing Successfull")
-		c.String(200, string(renderedMD))
-	} else {
-		log.Print("MD Parsing Failed - Empty String")
-	}
-}
-
-func main() {
+func init() {
 	// Loads the Env vars
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
+}
+func main() {
 	app := gin.Default()
 	app.Use(cors.Default())
 	app.POST("/md", renderMD)
