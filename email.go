@@ -23,34 +23,9 @@ type renderCtx struct {
 	ImageURL  string
 	Buttons   []Button
 	MD        string
+	Footer    string
 }
 
-// Name returns the Name of the recipeint
-func (e *renderCtx) Name() string {
-	log.Println("Rec Name", e.Recipient)
-	return e.Recipient
-}
-
-//Header adds the link to the header image
-func (e *renderCtx) Header(link string) string {
-	e.ImageURL = link
-	return ""
-}
-
-// AddButtons add buttons to the email
-func (e *renderCtx) AddButtons(text, link string) string {
-	var b bytes.Buffer
-	newButton := Button{
-		Text: text,
-		Link: link,
-	}
-	templ, err := template.New("Button").Parse(`<a href="{{ .Link }}" class="aligncenter btn-primary" itemprop="url" style="font-family: Avenir,Arial,sans-serif; box-sizing: border-box; font-size: 14px; color: #FFF; text-decoration: none; line-height: 2em; font-weight: bold; text-align: center; cursor: pointer; display: inline-block; border-radius: 5px; text-transform: capitalize; background-color: #348eda; margin: 0; border-color: #348eda; border-style: solid; border-width: 10px 20px;">{{ .Text }}</a>`)
-	if err != nil {
-		log.Println(err)
-	}
-	templ.Execute(&b, newButton)
-	return b.String()
-}
 func (e *EmailPageData) newRenderContext(counter int) renderCtx {
 	ctx := renderCtx{
 		Recipient: e.Rec[counter].Name,
@@ -184,7 +159,9 @@ img{
           <div class="footer" style="font-family: Avenir,Arial,sans-serif; box-sizing: border-box; font-size: 14px; width: 100%; clear: both; color: #999; margin: 0; padding: 20px;">
           <table width="100%" style="font-family: Avenir,Arial,sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
           <tr style="font-family: Avenir,Arial,sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
-          <td class="aligncenter content-block" style="font-family: Avenir,Arial,sans-serif; box-sizing: border-box; font-size: 12px; vertical-align: top; color: #999; text-align: center; margin: 0; padding: 0 0 20px;" align="center" valign="top">Follow <a href="http://twitter.com/mail_gun" style="font-family: Avenir,Arial,sans-serif; box-sizing: border-box; font-size: 12px; color: #999; text-decoration: underline; margin: 0;">@hhk</a> on Twitter.</td>
+          <td class="aligncenter content-block" style="font-family: Avenir,Arial,sans-serif; box-sizing: border-box; font-size: 12px; vertical-align: top; color: #999; text-align: center; margin: 0; padding: 0 0 20px;" align="center" valign="top">
+          {{.Footer}}
+          </td>
 						</tr></table></div></div>
 		</td>
 		<td style="font-family: Avenir,Arial,sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0;" valign="top"></td>

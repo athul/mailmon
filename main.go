@@ -57,9 +57,6 @@ func sendEmails(c *gin.Context) {
 	if err != nil {
 		log.Println(err)
 	}
-	// Map for making a Json response of Emails with a status code and Email
-
-	log.Println(len(stds), stds)
 	subject := c.PostForm("subject")
 	content := c.PostForm("content")
 	wg.Add(len(stds))
