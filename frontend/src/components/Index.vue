@@ -30,12 +30,6 @@
       />
       </div>
       <br/>
-      <FormulateInput
-        v-model="selected"
-        type="select"
-        placeholder="Select an option"
-        label="Select whom to send Emails to"
-      />
     <FormulateInput type="submit" name="Send Emails" />
       
     </FormulateForm>
@@ -47,9 +41,6 @@
     </div>
     <div>{{emresp}}</div>
     <br />
-    <!-- <div v-for="email in emails" :key="email">
-      <div>{{ email }}</div>
-    </div> -->
   </div>
 </template>
 
@@ -117,7 +108,6 @@ textarea {
   border: 2px solid #ccc;
   border-radius: 4px;
   background-color: white;
-  resize: none;
 }
 .render{
   padding: 12px 20px;

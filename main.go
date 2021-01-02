@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"html/template"
 	"io/ioutil"
 	"log"
 	"os"
@@ -13,7 +12,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
-	md "github.com/gomarkdown/markdown"
 	"github.com/joho/godotenv"
 	"gopkg.in/mail.v2"
 )
@@ -46,10 +44,11 @@ func getStudents() []Student {
 // Sends all the Emails
 func sendEmails(c *gin.Context) {
 	var (
-		start = time.Now()
-		wg    sync.WaitGroup
-		mutex = &sync.Mutex{}
-		stds  = getStudents()
+		start   = time.Now()
+		wg      sync.WaitGroup
+		mutex   = &sync.Mutex{}
+		stds    = getStudents()
+		emailfm string
 	)
 	// d := mail.NewDialer("smtp.yandex.com", 465, os.Getenv("USERNAME"), os.Getenv("PASSWORD"))
 	// d.StartTLSPolicy = mail.MandatoryStartTLS
@@ -64,19 +63,17 @@ func sendEmails(c *gin.Context) {
 	subject := c.PostForm("subject")
 	content := c.PostForm("content")
 	wg.Add(len(stds))
-	var mdhtml template.HTML
+	empage := EmailPageData{Rec: stds, MD: content}
 	// Send Email Asynchronously using a goroutine
 	for i, r := range stds {
-		ccontent := renderEmailTemplate(content, r)
-		htmlContent := md.ToHTML([]byte(ccontent), nil, nil)
-		mdhtml = template.HTML(htmlContent)
+		rndrctx := empage.newRenderContext(i)
 		go func(i int, r Student) {
 			defer wg.Done()
 			m := mail.NewMessage()
-
-			log.Println(i + 1)
+			emailfm = rndrctx.renderEmails()
+			log.Println("Exec", i+1)
 			m.SetHeader("Subject", subject)
-			m.SetBody("text/html", renderEmails(mdhtml))
+			m.SetBody("text/html", emailfm)
 			m.SetAddressHeader("From", os.Getenv("USERNAME"), "MailMon")
 			m.SetAddressHeader("To", r.Email, r.Name)
 			mutex.Lock()
@@ -91,23 +88,12 @@ func sendEmails(c *gin.Context) {
 	log.Printf("Goroutines = %d", runtime.NumGoroutine())
 	wg.Wait()
 	c.JSON(200, gin.H{
-		"md":      renderEmails(mdhtml),
+		"md":      emailfm,
 		"subject": subject,
 		"elapsed": time.Since(start).String(), // Displays execution time
 	})
 }
 
-// Render's Markdown from Request
-func renderMD(c *gin.Context) {
-	mdr := c.PostForm("mdb")
-	if mdr != "" {
-		renderedMD := md.ToHTML([]byte(mdr), nil, nil)
-		log.Print("MD parsing Successfull")
-		c.String(200, string(renderedMD))
-	} else {
-		log.Print("MD Parsing Failed - Empty String")
-	}
-}
 func init() {
 	// Loads the Env vars
 	if err := godotenv.Load(); err != nil {
