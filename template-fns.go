@@ -19,7 +19,7 @@ func (r *renderCtx) Name() string {
 func (r *renderCtx) Header(link string) string {
 	r.ImageURL = link
 	if r.ImageURL == "" && link == "" {
-		r.ImageURL = "https://i.imgur.com/4s3lF1Vt.png"
+		r.ImageURL = "https://i.imgur.com/4s3lF1V.png"
 	}
 	return ""
 }

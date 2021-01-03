@@ -18,3 +18,4 @@ dt/
 .air.conf
 tmp/
 .env
+ex-auth
